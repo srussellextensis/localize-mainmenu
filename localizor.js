@@ -40,7 +40,7 @@ fs.readFile(inputFilePath, program.encoding, function (err,data) {
 
   document.eachChild(function(child, index, array) {
     if (child.name.toLowerCase() != "file") {
-      console.log("skipped unexpected xml elment: '%s'", child.name)
+      console.log("skipped unexpected xml element: '%s'", child.name)
       return;
     }
 
@@ -63,30 +63,20 @@ fs.readFile(inputFilePath, program.encoding, function (err,data) {
     }
 
     var body = child.childNamed("body");
-    body.eachChild(function(child, index, array) {
+    var group = body.childNamed("group");
+    var searchChild = group || body;
+    searchChild.eachChild(function(child, index, array) {
       if (child.name.toLowerCase() == "trans-unit") {
-        var note = child.childNamed("note")
-        if (note != null) { 
-          var isOSXMenuItem = note.val.containsSubstring('Class = "NSMenu";') ||  note.val.containsSubstring('Class = "NSMenuItem";');
+        var source = child.childNamed("source").val
+        var target = child.childNamed("target");
 
-          var source = child.childNamed("source").val
-          var target = child.childNamed("target");
-
-          if (isOSXMenuItem) {
-            var translation = mappings[targetLang][source];
-            if (translation == undefined) {
-              console.log("no '%s' translation found for key '%s' in file '%s'", targetLang, source, fileName);
-            } else {
-              if (program.verbose) { console.log("replaced '%s' with '%s' (language:'%s') for key '%s' in file '%s'".green, target.val, translation, targetLang, source, fileName); }
-              target.val = translation;
-            }
-          } else {
-            if (program.verbose) { console.log("skipped trans-unit with source '%s' in file '%s'", source, fileName); }
-          }
+        var translation = mappings[targetLang][source];
+        if (translation == undefined) {
+          console.log("no '%s' translation found for key '%s' in file '%s'", targetLang, source, fileName);
         } else {
-          if (program.verbose) { console.log("skipped trans-unit"); }
+          if (program.verbose) { console.log("replaced '%s' with '%s' (language:'%s') for key '%s' in file '%s'".green, target.val, translation, targetLang, source, fileName); }
+          target.val = translation;
         }
-        
       } else {
         if (program.verbose) { console.log("skipped unexpected xml elment: '%s'", child.name); }
       } 
