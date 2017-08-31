@@ -51,6 +51,15 @@ fs.readFile(inputFilePath, program.encoding, function (err,data) {
       console.log("unsupported source-language '%s' for file %s", sourceLang, fileName);
       return; // skip this file
     }
+    
+    targetLang = {
+        'french' : 'fr',
+        'german' : 'de',
+        'italian' : 'it',
+        'japanese' : 'ja',
+        'portuguese' : 'pt',
+        'spanish' : 'es'
+    }[targetLang] || targetLang;
 
     if (mappings[targetLang] == undefined) {
       try {
@@ -67,15 +76,23 @@ fs.readFile(inputFilePath, program.encoding, function (err,data) {
     var searchChild = group || body;
     searchChild.eachChild(function(child, index, array) {
       if (child.name.toLowerCase() == "trans-unit") {
-        var source = child.childNamed("source").val
+        var source = child.childNamed("source")
         var target = child.childNamed("target");
 
-        var translation = mappings[targetLang][source];
+        var translation = mappings[targetLang][source.val];
+        
+        source.val = escapeVal(source.val);
         if (translation == undefined) {
           console.log("no '%s' translation found for key '%s' in file '%s'", targetLang, source, fileName);
+          
         } else {
           if (program.verbose) { console.log("replaced '%s' with '%s' (language:'%s') for key '%s' in file '%s'".green, target.val, translation, targetLang, source, fileName); }
           target.val = translation;
+        }
+        
+        if(target && target.val)
+        {
+            target.val = escapeVal(target.val);
         }
       } else {
         if (program.verbose) { console.log("skipped unexpected xml elment: '%s'", child.name); }
@@ -95,6 +112,15 @@ fs.readFile(inputFilePath, program.encoding, function (err,data) {
 
 });
 
+
+function escapeVal(s)
+{
+    if(!s)
+        return s;
+    return s.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+}
 
 function insertAppName(targetLang, appName) {
   if (!program.appname) { return; }
